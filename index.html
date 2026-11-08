@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>포켓몬 챌린지 무작위 뽑기</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+    
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+    }
+    
+    .font-jua { font-family: 'Jua', sans-serif; }
+    
+    .switch-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    .btn-pop {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn-pop:hover {
+      transform: translateY(-3px) scale(1.02);
+    }
+    .btn-pop:active {
+      transform: translateY(1px) scale(0.98);
+    }
+    
+    .chip {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .chip.excluded {
+      opacity: 0.35;
+      filter: grayscale(80%);
+      text-decoration: line-through;
+    }
+    
+    /* Toggle switch style */
+    .toggle-checkbox:checked {
+      right: 0;
+      border-color: #10B981;
+    }
+    .toggle-checkbox:checked + .toggle-label {
+      background-color: #10B981;
+    }
+
+    /* Modal Animation */
+    .modal-enter {
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
+
+  <div class="max-w-4xl w-full space-y-6">
+    
+    <!-- 헤더 -->
+    <header class="text-center space-y-2">
+      <div class="inline-flex items-center space-x-2 bg-red-500/20 text-red-400 px-4 py-1.5 rounded-full border border-red-500/30 text-sm font-bold">
+        <span>⚡ POKÉMON CHALLENGE PICKER</span>
+      </div>
+      <h1 class="text-3xl md:text-5xl font-extrabold font-jua tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-300 to-cyan-400">
+        포켓몬 챌린지 무작위 뽑기
+      </h1>
+      <p class="text-slate-400 text-sm md:text-base">세대, 타입 또는 커스텀 4칸 항목을 원하는 미니게임으로 뽑아보세요!</p>
+    </header>
+
+    <!-- 메인 대시보드 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- 왼쪽: 미니게임 & 룰렛 캔버스 (7열) -->
+      <div class="lg:col-span-7 space-y-4">
+        
+        <!-- Target Selection Tabs -->
+        <div class="flex bg-slate-900/80 p-1.5 rounded-2xl border border-slate-700/60 font-bold text-sm">
+          <button id="tab-gen" onclick="setCategory('gen')" class="flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg">1~9세대</button>
+          <button id="tab-type" onclick="setCategory('type')" class="flex-1 py-2 rounded-xl transition-all text-slate-400 hover:text-white">18가지 타입</button>
+          <button id="tab-custom" onclick="setCategory('custom')" class="flex-1 py-2 rounded-xl transition-all text-slate-400 hover:text-white">🎨 커스텀 (4칸)</button>
+        </div>
+
+        <!-- Mini Game Mode Selector -->
+        <div class="grid grid-cols-4 gap-2">
+          <button id="mode-roulette" onclick="setGameMode('roulette')" class="switch-card p-3 rounded-2xl text-center btn-pop border-2 border-indigo-500 bg-indigo-950/40">
+            <div class="text-xl md:text-2xl">🎯</div>
+            <div class="text-xs font-bold mt-1">회전 룰렛</div>
+          </button>
+          <button id="mode-cannon" onclick="setGameMode('cannon')" class="switch-card p-3 rounded-2xl text-center btn-pop opacity-60">
+            <div class="text-xl md:text-2xl">💥</div>
+            <div class="text-xs font-bold mt-1">시크릿 대포</div>
+          </button>
+          <button id="mode-slot" onclick="setGameMode('slot')" class="switch-card p-3 rounded-2xl text-center btn-pop opacity-60">
+            <div class="text-xl md:text-2xl">🎰</div>
+            <div class="text-xs font-bold mt-1">슬롯머신</div>
+          </button>
+          <button id="mode-pokeball" onclick="setGameMode('pokeball')" class="switch-card p-3 rounded-2xl text-center btn-pop opacity-60">
+            <div class="text-xl md:text-2xl">🔮</div>
+            <div class="text-xs font-bold mt-1">몬스터볼 Pick</div>
+          </button>
+        </div>
+
+        <!-- 캔버스 연출 영역 -->
+        <div class="switch-card rounded-3xl p-4 flex flex-col items-center justify-center relative min-h-[360px] overflow-hidden">
+          <canvas id="gameCanvas" width="340" height="340" class="max-w-full"></canvas>
+          <div id="gameInstruction" class="absolute bottom-3 text-xs text-slate-400 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700 hidden">
+            몬스터볼 3개 중 1개를 클릭하세요!
+          </div>
+        </div>
+
+        <!-- 메인 실행 버튼 -->
+        <button id="spinBtn" onclick="startSpin()" class="w-full py-4 bg-gradient-to-r from-red-500 via-pink-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-jua text-2xl md:text-3xl rounded-2xl shadow-xl shadow-red-500/25 btn-pop tracking-wider">
+          돌려 돌려 돌림판!
+        </button>
+
+      </div>
+
+      <!-- 오른쪽: 항목 설정 & 커스텀 입력 & 기록 (5열) -->
+      <div class="lg:col-span-5 space-y-4">
+        
+        <!-- 커스텀 4칸 입력창 (커스텀 탭에서만 표시) -->
+        <div id="customInputsCard" class="switch-card p-5 rounded-3xl space-y-3 hidden">
+          <h3 class="font-bold text-lg text-amber-300 flex items-center justify-between">
+            <span>🎨 커스텀 4칸 항목 설정</span>
+            <span class="text-xs text-slate-400 font-normal">직접 입력</span>
+          </h3>
+          <div class="grid grid-cols-1 gap-2">
+            <div>
+              <label class="text-xs text-slate-400 font-bold mb-1 block">칸 1</label>
+              <input type="text" id="custom-0" value="옵션 A" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-bold mb-1 block">칸 2</label>
+              <input type="text" id="custom-1" value="옵션 B" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-bold mb-1 block">칸 3</label>
+              <input type="text" id="custom-2" value="옵션 C" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 font-bold mb-1 block">칸 4</label>
+              <input type="text" id="custom-3" value="옵션 D" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+            </div>
+          </div>
+        </div>
+
+        <!-- 룰렛 항목 및 자동 제외 관리 카드 -->
+        <div id="itemControlCard" class="switch-card p-5 rounded-3xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-lg text-indigo-300">룰렛 항목 관리</h3>
+            <button onclick="resetCurrentCategory()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors">
+              전체 복원
+            </button>
+          </div>
+
+          <!-- 자동 제외 토글 스위치 -->
+          <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+            <span class="text-sm font-medium text-slate-300">당첨 항목 룰렛에서 자동 제외</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="autoExcludeToggle" class="sr-only peer" checked>
+              <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+          </div>
+
+          <!-- Chip list -->
+          <div id="chipContainer" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- 히스토리 목록 -->
+        <div class="switch-card p-5 rounded-3xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-lg text-slate-200">최근 당첨 히스토리</h3>
+            <button onclick="clearHistory()" class="text-xs text-slate-400 hover:text-red-400 transition-colors">기록 삭제</button>
+          </div>
+          <div id="historyList" class="space-y-2 max-h-40 overflow-y-auto text-sm text-slate-300">
+            <div class="text-center text-slate-500 text-xs py-4">아직 뽑기 기록이 없습니다.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- 당첨 결과 모달 -->
+  <div id="resultModal" class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="switch-card bg-slate-900/90 border-2 border-amber-400/50 rounded-3xl p-6 max-w-sm w-full text-center space-y-5 modal-enter">
+      <div class="text-sm font-bold text-amber-400 uppercase tracking-widest">Congratulations!</div>
+      <div id="modalCategory" class="text-xs text-slate-400 font-medium">1~9세대 챌린지</div>
+      
+      <div class="py-2">
+        <div id="modalResultText" class="text-4xl font-extrabold font-jua text-white drop-shadow-lg">
+          -
+        </div>
+      </div>
+
+      <button onclick="closeModal()" class="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-jua text-xl rounded-xl font-bold shadow-lg btn-pop">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 데이터 정의
+    const GEN_DATA = [
+      { id: 'gen1', name: '1세대 (관동)', color: '#EF4444' },
+      { id: 'gen2', name: '2세대 (성도)', color: '#F59E0B' },
+      { id: 'gen3', name: '3세대 (호연)', color: '#10B981' },
+      { id: 'gen4', name: '4세대 (신오)', color: '#06B6D4' },
+      { id: 'gen5', name: '5세대 (하나)', color: '#3B82F6' },
+      { id: 'gen6', name: '6세대 (칼로스)', color: '#6366F1' },
+      { id: 'gen7', name: '7세대 (알로라)', color: '#8B5CF6' },
+      { id: 'gen8', name: '8세대 (가라르)', color: '#EC4899' },
+      { id: 'gen9', name: '9세대 (팔데아)', color: '#F43F5E' }
+    ];
+
+    const TYPE_DATA = [
+      { id: 'normal', name: '노말', color: '#9199A1' },
+      { id: 'fire', name: '불꽃', color: '#FF9D55' },
+      { id: 'water', name: '물', color: '#5090D6' },
+      { id: 'grass', name: '풀', color: '#63BB5B' },
+      { id: 'electric', name: '전기', color: '#F4D23C' },
+      { id: 'ice', name: '얼음', color: '#73CEC0' },
+      { id: 'fighting', name: '격투', color: '#CE416B' },
+      { id: 'poison', name: '독', color: '#A552CC' },
+      { id: 'ground', name: '땅', color: '#D97845' },
+      { id: 'flying', name: '비행', color: '#8FA9DE' },
+      { id: 'psychic', name: '에스퍼', color: '#FA7179' },
+      { id: 'bug', name: '벌레', color: '#91C12F' },
+      { id: 'rock', name: '바위', color: '#C5B78C' },
+      { id: 'ghost', name: '고스트', color: '#5269AC' },
+      { id: 'dragon', name: '드래곤', color: '#0B6DC3' },
+      { id: 'dark', name: '악', color: '#5A5465' },
+      { id: 'steel', name: '강철', color: '#5A8EA2' },
+      { id: 'fairy', name: '페어리', color: '#EC8FE6' }
+    ];
+
+    let customData = [
+      { id: 'c1', name: '옵션 A', color: '#F43F5E' },
+      { id: 'c2', name: '옵션 B', color: '#3B82F6' },
+      { id: 'c3', name: '옵션 C', color: '#10B981' },
+      { id: 'c4', name: '옵션 D', color: '#F59E0B' }
+    ];
+
+    // 제외 목록 관리
+    let excludedSet = new Set();
+    let currentCategory = 'gen'; // 'gen', 'type', 'custom'
+    let currentGameMode = 'roulette'; // 'roulette', 'cannon', 'slot', 'pokeball'
+    let isSpinning = false;
+    let historyLog = [];
+
+    // Audio Synth Context
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'tick') {
+          osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.04);
+        } else if (type === 'win') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.5);
+        } else if (type === 'boom') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        }
+      } catch (e) {}
+    }
+
+    // 현재 활성화된 데이터 목록 반환
+    function getCurrentRawData() {
+      if (currentCategory === 'gen') return GEN_DATA;
+      if (currentCategory === 'type') return TYPE_DATA;
+      return customData;
+    }
+
+    function getActiveItems() {
+      return getCurrentRawData().filter(item => !excludedSet.has(item.id));
+    }
+
+    // 커스텀 입력 업데이트
+    function updateCustomItems() {
+      for (let i = 0; i < 4; i++) {
+        const val = document.getElementById(`custom-${i}`).value.trim();
+        customData[i].name = val || `옵션 ${String.fromCharCode(65 + i)}`;
+      }
+      if (currentCategory === 'custom') {
+        renderChips();
+        drawCanvas();
+      }
+    }
+
+    // 탭 변경
+    function setCategory(cat) {
+      if (isSpinning) return;
+      currentCategory = cat;
+      
+      const tabGen = document.getElementById('tab-gen');
+      const tabType = document.getElementById('tab-type');
+      const tabCustom = document.getElementById('tab-custom');
+      const customInputsCard = document.getElementById('customInputsCard');
+
+      [tabGen, tabType, tabCustom].forEach(btn => {
+        btn.className = "flex-1 py-2 rounded-xl transition-all text-slate-400 hover:text-white";
+      });
+
+      if (cat === 'gen') {
+        tabGen.className = "flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg";
+        customInputsCard.classList.add('hidden');
+      } else if (cat === 'type') {
+        tabType.className = "flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg";
+        customInputsCard.classList.add('hidden');
+      } else {
+        tabCustom.className = "flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg";
+        customInputsCard.classList.remove('hidden');
+      }
+
+      renderChips();
+      drawCanvas();
+    }
+
+    // 게임 모드 변경
+    function setGameMode(mode) {
+      if (isSpinning) return;
+      currentGameMode = mode;
+      
+      ['roulette', 'cannon', 'slot', 'pokeball'].forEach(m => {
+        const btn = document.getElementById(`mode-${m}`);
+        if (m === mode) {
+          btn.className = "switch-card p-3 rounded-2xl text-center btn-pop border-2 border-indigo-500 bg-indigo-950/40 opacity-100";
+        } else {
+          btn.className = "switch-card p-3 rounded-2xl text-center btn-pop opacity-60";
+        }
+      });
+
+      const instruction = document.getElementById('gameInstruction');
+      if (mode === 'pokeball') {
+        instruction.classList.remove('hidden');
+      } else {
+        instruction.classList.add('hidden');
+      }
+
+      drawCanvas();
+    }
+
+    // 칩 렌더링
+    function renderChips() {
+      const container = document.getElementById('chipContainer');
+      container.innerHTML = '';
+      const items = getCurrentRawData();
+
+      items.forEach(item => {
+        const isExcluded = excludedSet.has(item.id);
+        const chip = document.createElement('div');
+        chip.className = `chip px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center space-x-1.5 ${isExcluded ? 'excluded bg-slate-900/40 border-slate-800 text-slate-500' : 'bg-slate-800/80 border-slate-700 text-slate-200'}`;
+        
+        chip.innerHTML = `
+          <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${item.color}"></span>
+          <span>${item.name}</span>
+        `;
+
+        chip.onclick = () => {
+          if (isSpinning) return;
+          if (excludedSet.has(item.id)) {
+            excludedSet.delete(item.id);
+          } else {
+            if (getActiveItems().length <= 1) {
+              alert('최소 1개 이상의 항목은 남겨두어야 합니다!');
+              return;
+            }
+            excludedSet.add(item.id);
+          }
+          renderChips();
+          drawCanvas();
+        };
+
+        container.appendChild(chip);
+      });
+    }
+
+    function resetCurrentCategory() {
+      if (isSpinning) return;
+      const items = getCurrentRawData();
+      items.forEach(i => excludedSet.delete(i.id));
+      renderChips();
+      drawCanvas();
+    }
+
+    // 캔버스 그리기 관련 변수 및 로직
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let rouletteAngle = 0;
+    let pokeballSelected = null;
+
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const items = getActiveItems();
+
+      if (items.length === 0) {
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = 'bold 16px Noto Sans KR';
+        ctx.textAlign = 'center';
+        ctx.fillText('선택된 항목이 없습니다', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+
+      if (currentGameMode === 'roulette') {
+        drawRouletteWheel(items);
+      } else if (currentGameMode === 'cannon') {
+        drawCannonScene();
+      } else if (currentGameMode === 'slot') {
+        drawSlotMachineScene(items);
+      } else if (currentGameMode === 'pokeball') {
+        drawPokeballScene();
+      }
+    }
+
+    // 1. 룰렛 그리기
+    function drawRouletteWheel(items) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 145;
+      const arc = (Math.PI * 2) / items.length;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(rouletteAngle);
+
+      for (let i = 0; i < items.length; i++) {
+        const angle = i * arc;
+        ctx.beginPath();
+        ctx.fillStyle = items[i].color;
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, angle, angle + arc);
+        ctx.lineTo(0, 0);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 텍스트
+        ctx.save();
+        ctx.rotate(angle + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 13px Noto Sans KR';
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(items[i].name, radius - 15, 5);
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // 중앙 캡
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 22, 0, Math.PI * 2);
+      ctx.fillStyle = '#0F172A';
+      ctx.fill();
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 룰렛 화살표 (위쪽)
+      ctx.beginPath();
+      ctx.moveTo(centerX - 12, 18);
+      ctx.lineTo(centerX + 12, 18);
+      ctx.lineTo(centerX, 42);
+      ctx.closePath();
+      ctx.fillStyle = '#EF4444';
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // 2. 대포 그리기
+    function drawCannonScene(launchProgress = 0, secretBallY = 0) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      // 배경 대포 기둥
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY + 80, 50, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 대포 몸통
+      ctx.save();
+      ctx.translate(centerX, centerY + 70);
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(-25, -90, 50, 90);
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(-25, -90, 50, 90);
+      ctx.restore();
+
+      // 시크릿 몬스터볼 발사 애니메이션
+      if (launchProgress > 0) {
+        ctx.save();
+        ctx.translate(centerX, centerY + 20 - secretBallY);
+        // 몬스터볼
+        ctx.beginPath();
+        ctx.arc(0, 0, 20, 0, Math.PI * 2);
+        ctx.fillStyle = '#EF4444';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, 20, 0, Math.PI, false);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#0F172A';
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // 3. 슬롯머신 그리기
+    function drawSlotMachineScene(items, slotText = '?') {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      // 슬롯 프레임
+      ctx.fillStyle = '#1E293B';
+      ctx.fillRect(centerX - 120, centerY - 70, 240, 140);
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(centerX - 120, centerY - 70, 240, 140);
+
+      // 슬롯 창
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(centerX - 100, centerY - 50, 200, 100);
+
+      // 텍스트 출력
+      ctx.fillStyle = '#FCE7F3';
+      ctx.font = 'bold 28px Jua';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(slotText, centerX, centerY);
+    }
+
+    // 4. 몬스터볼 Pick 그리기
+    function drawPokeballScene() {
+      const centerY = canvas.height / 2;
+      const positions = [65, 170, 275];
+
+      positions.forEach((x, idx) => {
+        ctx.save();
+        ctx.translate(x, centerY);
+        
+        // 몬스터볼 3개 그리기
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.fillStyle = '#EF4444';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI, false);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#0F172A';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+      });
+    }
+
+    // 몬스터볼 클릭 이벤트 처리
+    canvas.addEventListener('click', (e) => {
+      if (currentGameMode !== 'pokeball' || isSpinning) return;
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      const centerY = canvas.height / 2;
+      const positions = [65, 170, 275];
+
+      positions.forEach((x, idx) => {
+        const dist = Math.hypot(clickX - x, clickY - centerY);
+        if (dist <= 35) {
+          pokeballSelected = idx;
+          startSpin();
+        }
+      });
+    });
+
+    // 메인 무작위 추첨 실행 함수
+    function startSpin() {
+      const items = getActiveItems();
+      if (items.length === 0 || isSpinning) return;
+
+      isSpinning = true;
+      document.getElementById('spinBtn').disabled = true;
+
+      const winnerIndex = Math.floor(Math.random() * items.length);
+      const winner = items[winnerIndex];
+
+      if (currentGameMode === 'roulette') {
+        runRouletteAnimation(items, winnerIndex, winner);
+      } else if (currentGameMode === 'cannon') {
+        runCannonAnimation(winner);
+      } else if (currentGameMode === 'slot') {
+        runSlotAnimation(items, winner);
+      } else if (currentGameMode === 'pokeball') {
+        runPokeballAnimation(winner);
+      }
+    }
+
+    // 룰렛 애니메이션
+    function runRouletteAnimation(items, winnerIndex, winner) {
+      const totalSlices = items.length;
+      const sliceArc = (Math.PI * 2) / totalSlices;
+      const targetAngle = (Math.PI * 2) * 5 + (totalSlices - winnerIndex - 0.5) * sliceArc - Math.PI / 2;
+      
+      let start = null;
+      const duration = 3500;
+      let lastTick = 0;
+
+      function animate(timestamp) {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
+        rouletteAngle = easeOut * targetAngle;
+        
+        if (elapsed - lastTick > 100 - progress * 50) {
+          playSound('tick');
+          lastTick = elapsed;
+        }
+
+        drawCanvas();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          finishSpin(winner);
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // 대포 애니메이션
+    function runCannonAnimation(winner) {
+      let start = null;
+      const duration = 2000;
+
+      function animate(timestamp) {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const ballY = progress * 160;
+
+        drawCannonScene(progress, ballY);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          playSound('boom');
+          finishSpin(winner);
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // 슬롯머신 애니메이션
+    function runSlotAnimation(items, winner) {
+      let count = 0;
+      const maxCount = 25;
+      const interval = setInterval(() => {
+        const tempItem = items[Math.floor(Math.random() * items.length)];
+        drawSlotMachineScene(items, tempItem.name);
+        playSound('tick');
+        count++;
+
+        if (count >= maxCount) {
+          clearInterval(interval);
+          finishSpin(winner);
+        }
+      }, 80);
+    }
+
+    // 몬스터볼 Pick 애니메이션
+    function runPokeballAnimation(winner) {
+      playSound('win');
+      setTimeout(() => {
+        finishSpin(winner);
+      }, 500);
+    }
+
+    // 당첨 완료 처리
+    function finishSpin(winner) {
+      isSpinning = false;
+      document.getElementById('spinBtn').disabled = false;
+      playSound('win');
+
+      // 폭죽 효과
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      // 히스토리 추가
+      let catName = '1~9세대';
+      if (currentCategory === 'type') catName = '18가지 타입';
+      if (currentCategory === 'custom') catName = '커스텀 4칸';
+
+      historyLog.unshift({ category: catName, result: winner.name, time: new Date().toLocaleTimeString() });
+      updateHistoryUI();
+
+      // 자동 제외 체크 시 제외 처리
+      const autoExclude = document.getElementById('autoExcludeToggle').checked;
+      if (autoExclude) {
+        if (getActiveItems().length > 1) {
+          excludedSet.add(winner.id);
+          renderChips();
+        }
+      }
+
+      // 모달 표시
+      document.getElementById('modalCategory').innerText = `${catName} 챌린지 결과`;
+      document.getElementById('modalResultText').innerText = winner.name;
+      document.getElementById('resultModal').classList.remove('hidden');
+
+      drawCanvas();
+    }
+
+    function closeModal() {
+      document.getElementById('resultModal').classList.add('hidden');
+    }
+
+    function updateHistoryUI() {
+      const container = document.getElementById('historyList');
+      if (historyLog.length === 0) {
+        container.innerHTML = `<div class="text-center text-slate-500 text-xs py-4">아직 뽑기 기록이 없습니다.</div>`;
+        return;
+      }
+      container.innerHTML = historyLog.map(item => `
+        <div class="flex items-center justify-between bg-slate-900/50 px-3 py-2 rounded-xl border border-slate-800">
+          <span class="text-xs text-slate-400 font-bold">[${item.category}]</span>
+          <span class="font-bold text-amber-300">${item.result}</span>
+          <span class="text-xs text-slate-500">${item.time}</span>
+        </div>
+      `).join('');
+    }
+
+    function clearHistory() {
+      historyLog = [];
+      updateHistoryUI();
+    }
+
+    // 초기화 실행
+    renderChips();
+    drawCanvas();
+  </script>
+</body>
+</html>
