@@ -8,23 +8,23 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap');
-    
+
     body {
       font-family: 'Noto Sans KR', sans-serif;
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
       color: #f8fafc;
       min-height: 100vh;
     }
-    
+
     .font-jua { font-family: 'Jua', sans-serif; }
-    
+
     .switch-card {
       background: rgba(30, 41, 59, 0.7);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     }
-    
+
     .btn-pop {
       transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
@@ -34,7 +34,7 @@
     .btn-pop:active {
       transform: translateY(1px) scale(0.98);
     }
-    
+
     .chip {
       transition: all 0.2s ease;
       cursor: pointer;
@@ -44,15 +44,6 @@
       opacity: 0.35;
       filter: grayscale(80%);
       text-decoration: line-through;
-    }
-    
-    /* Toggle switch style */
-    .toggle-checkbox:checked {
-      right: 0;
-      border-color: #10B981;
-    }
-    .toggle-checkbox:checked + .toggle-label {
-      background-color: #10B981;
     }
 
     /* Modal Animation */
@@ -68,7 +59,7 @@
 <body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
 
   <div class="max-w-4xl w-full space-y-6">
-    
+
     <!-- 헤더 -->
     <header class="text-center space-y-2">
       <div class="inline-flex items-center space-x-2 bg-red-500/20 text-red-400 px-4 py-1.5 rounded-full border border-red-500/30 text-sm font-bold">
@@ -77,20 +68,21 @@
       <h1 class="text-3xl md:text-5xl font-extrabold font-jua tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-300 to-cyan-400">
         포켓몬 챌린지 무작위 뽑기
       </h1>
-      <p class="text-slate-400 text-sm md:text-base">세대, 타입 또는 커스텀 4칸 항목을 원하는 미니게임으로 뽑아보세요!</p>
+      <p class="text-slate-400 text-sm md:text-base">세대, 타입, 전체 포켓몬 또는 커스텀 4칸 항목을 뽑아보세요!</p>
     </header>
 
     <!-- 메인 대시보드 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      
+
       <!-- 왼쪽: 미니게임 & 룰렛 캔버스 (7열) -->
       <div class="lg:col-span-7 space-y-4">
-        
+
         <!-- Target Selection Tabs -->
-        <div class="flex bg-slate-900/80 p-1.5 rounded-2xl border border-slate-700/60 font-bold text-sm">
-          <button id="tab-gen" onclick="setCategory('gen')" class="flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg">1~9세대</button>
-          <button id="tab-type" onclick="setCategory('type')" class="flex-1 py-2 rounded-xl transition-all text-slate-400 hover:text-white">18가지 타입</button>
-          <button id="tab-custom" onclick="setCategory('custom')" class="flex-1 py-2 rounded-xl transition-all text-slate-400 hover:text-white">🎨 커스텀 (4칸)</button>
+        <div class="flex bg-slate-900/80 p-1.5 rounded-2xl border border-slate-700/60 font-bold text-sm overflow-x-auto space-x-1">
+          <button id="tab-gen" onclick="setCategory('gen')" class="flex-1 py-2 px-3 rounded-xl transition-all text-white bg-indigo-600 shadow-lg whitespace-nowrap">1~9세대</button>
+          <button id="tab-type" onclick="setCategory('type')" class="flex-1 py-2 px-3 rounded-xl transition-all text-slate-400 hover:text-white whitespace-nowrap">18가지 타입</button>
+          <button id="tab-all" onclick="setCategory('all')" class="flex-1 py-2 px-3 rounded-xl transition-all text-slate-400 hover:text-white whitespace-nowrap">🌟 전체 (1025+)</button>
+          <button id="tab-custom" onclick="setCategory('custom')" class="flex-1 py-2 px-3 rounded-xl transition-all text-slate-400 hover:text-white whitespace-nowrap">🎨 커스텀 (4칸)</button>
         </div>
 
         <!-- Mini Game Mode Selector -->
@@ -130,8 +122,8 @@
 
       <!-- 오른쪽: 항목 설정 & 커스텀 입력 & 기록 (5열) -->
       <div class="lg:col-span-5 space-y-4">
-        
-        <!-- 커스텀 4칸 입력창 (커스텀 탭에서만 표시) -->
+
+        <!-- 커스텀 4칸 입력창 -->
         <div id="customInputsCard" class="switch-card p-5 rounded-3xl space-y-3 hidden">
           <h3 class="font-bold text-lg text-amber-300 flex items-center justify-between">
             <span>🎨 커스텀 4칸 항목 설정</span>
@@ -140,19 +132,19 @@
           <div class="grid grid-cols-1 gap-2">
             <div>
               <label class="text-xs text-slate-400 font-bold mb-1 block">칸 1</label>
-              <input type="text" id="custom-0" value="옵션 A" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+              <input type="text" id="custom-0" value="옵션 A" oninput="updateCustomItems()" class="w-full bg-black text-white font-bold border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
             </div>
             <div>
               <label class="text-xs text-slate-400 font-bold mb-1 block">칸 2</label>
-              <input type="text" id="custom-1" value="옵션 B" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+              <input type="text" id="custom-1" value="옵션 B" oninput="updateCustomItems()" class="w-full bg-black text-white font-bold border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
             </div>
             <div>
               <label class="text-xs text-slate-400 font-bold mb-1 block">칸 3</label>
-              <input type="text" id="custom-2" value="옵션 C" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+              <input type="text" id="custom-2" value="옵션 C" oninput="updateCustomItems()" class="w-full bg-black text-white font-bold border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
             </div>
             <div>
               <label class="text-xs text-slate-400 font-bold mb-1 block">칸 4</label>
-              <input type="text" id="custom-3" value="옵션 D" oninput="updateCustomItems()" class="w-full bg-white text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+              <input type="text" id="custom-3" value="옵션 D" oninput="updateCustomItems()" class="w-full bg-black text-white font-bold border border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
             </div>
           </div>
         </div>
@@ -160,22 +152,20 @@
         <!-- 룰렛 항목 및 자동 제외 관리 카드 -->
         <div id="itemControlCard" class="switch-card p-5 rounded-3xl space-y-4">
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-lg text-indigo-300">룰렛 항목 관리</h3>
+            <h3 class="font-bold text-lg text-indigo-300" id="controlTitle">룰렛 항목 관리</h3>
             <button onclick="resetCurrentCategory()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors">
               전체 복원
             </button>
           </div>
 
-          <!-- 자동 제외 토글 스위치 -->
           <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-            <span class="text-sm font-medium text-slate-300">당첨 항목 룰렛에서 자동 제외</span>
+            <span class="text-sm font-medium text-slate-300">당첨 항목 자동 제외</span>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="autoExcludeToggle" class="sr-only peer" checked>
               <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
             </label>
           </div>
 
-          <!-- Chip list -->
           <div id="chipContainer" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
             <!-- Dynamically populated -->
           </div>
@@ -202,10 +192,10 @@
   <div id="resultModal" class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
     <div class="switch-card bg-slate-900/90 border-2 border-amber-400/50 rounded-3xl p-6 max-w-sm w-full text-center space-y-5 modal-enter">
       <div class="text-sm font-bold text-amber-400 uppercase tracking-widest">Congratulations!</div>
-      <div id="modalCategory" class="text-xs text-slate-400 font-medium">1~9세대 챌린지</div>
-      
+      <div id="modalCategory" class="text-xs text-slate-400 font-medium">챌린지 결과</div>
+
       <div class="py-2">
-        <div id="modalResultText" class="text-4xl font-extrabold font-jua text-white drop-shadow-lg">
+        <div id="modalResultText" class="text-3xl md:text-4xl font-extrabold font-jua text-white drop-shadow-lg">
           -
         </div>
       </div>
@@ -217,7 +207,7 @@
   </div>
 
   <script>
-    // 데이터 정의
+    // 1~9세대 데이터
     const GEN_DATA = [
       { id: 'gen1', name: '1세대 (관동)', color: '#EF4444' },
       { id: 'gen2', name: '2세대 (성도)', color: '#F59E0B' },
@@ -230,6 +220,7 @@
       { id: 'gen9', name: '9세대 (팔데아)', color: '#F43F5E' }
     ];
 
+    // 18타입 데이터
     const TYPE_DATA = [
       { id: 'normal', name: '노말', color: '#9199A1' },
       { id: 'fire', name: '불꽃', color: '#FF9D55' },
@@ -251,6 +242,7 @@
       { id: 'fairy', name: '페어리', color: '#EC8FE6' }
     ];
 
+    // 커스텀 데이터
     let customData = [
       { id: 'c1', name: '옵션 A', color: '#F43F5E' },
       { id: 'c2', name: '옵션 B', color: '#3B82F6' },
@@ -258,14 +250,63 @@
       { id: 'c4', name: '옵션 D', color: '#F59E0B' }
     ];
 
-    // 제외 목록 관리
+    // 1025마리 대표 샘플 데이터셋 + 주요 리전폼
+    const ALL_POKEMON_DATA = [
+      { id: 'p1', name: '#0001 이상해씨', color: '#63BB5B' },
+      { id: 'p4', name: '#0004 파이리', color: '#FF9D55' },
+      { id: 'p7', name: '#0007 꼬부기', color: '#5090D6' },
+      { id: 'p25', name: '#0025 피카츄', color: '#F4D23C' },
+      { id: 'p133', name: '#0133 이브이', color: '#9199A1' },
+      { id: 'p150', name: '#0150 뮤츠', color: '#FA7179' },
+      { id: 'p151', name: '#0151 뮤', color: '#EC8FE6' },
+      { id: 'p152', name: '#0152 치코리타', color: '#63BB5B' },
+      { id: 'p155', name: '#0155 브라이참', color: '#FF9D55' },
+      { id: 'p158', name: '#0158 리아코', color: '#5090D6' },
+      { id: 'p249', name: '#0249 루기아', color: '#8FA9DE' },
+      { id: 'p250', name: '#0250 칠색조', color: '#FF9D55' },
+      { id: 'p252', name: '#0252 나무지기', color: '#63BB5B' },
+      { id: 'p255', name: '#0255 아차모', color: '#FF9D55' },
+      { id: 'p258', name: '#0258 물짱이', color: '#5090D6' },
+      { id: 'p384', name: '#0384 레쿠쟈', color: '#0B6DC3' },
+      { id: 'p387', name: '#0387 모부기', color: '#63BB5B' },
+      { id: 'p390', name: '#0390 불꽃숭이', color: '#FF9D55' },
+      { id: 'p393', name: '#0393 팽도리', color: '#5090D6' },
+      { id: 'p448', name: '#0448 루카리오', color: '#CE416B' },
+      { id: 'p493', name: '#0493 아르세우스', color: '#F4D23C' },
+      { id: 'p495', name: '#0495 주리비얀', color: '#63BB5B' },
+      { id: 'p498', name: '#0498 뚜꾸리', color: '#FF9D55' },
+      { id: 'p501', name: '#0501 수댕이', color: '#5090D6' },
+      { id: 'p643', name: '#0643 레시라무', color: '#FF9D55' },
+      { id: 'p644', name: '#0644 제크로무', color: '#5A5465' },
+      { id: 'p650', name: '#0650 도치마론', color: '#63BB5B' },
+      { id: 'p653', name: '#0653 푸코기', color: '#FF9D55' },
+      { id: 'p656', name: '#0656 개구마르', color: '#5090D6' },
+      { id: 'p722', name: '#0722 나몰라빼미', color: '#63BB5B' },
+      { id: 'p725', name: '#0725 냐오불', color: '#FF9D55' },
+      { id: 'p728', name: '#0728 누리공', color: '#5090D6' },
+      { id: 'p810', name: '#0810 흥나숭', color: '#63BB5B' },
+      { id: 'p813', name: '#0813 염버니', color: '#FF9D55' },
+      { id: 'p816', name: '#0816 울머기', color: '#5090D6' },
+      { id: 'p888', name: '#0888 자시안', color: '#0B6DC3' },
+      { id: 'p906', name: '#0906 나오하', color: '#63BB5B' },
+      { id: 'p909', name: '#0909 뜨아거', color: '#FF9D55' },
+      { id: 'p912', name: '#0912 꾸왁스', color: '#5090D6' },
+      { id: 'p1007', name: '#1007 코라이돈', color: '#F43F5E' },
+      { id: 'p1008', name: '#1008 미라이돈', color: '#3B82F6' },
+      { id: 'p1025', name: '#1025 복망웅', color: '#A552CC' },
+      { id: 'r1', name: '알로라 나옹', color: '#5A5465' },
+      { id: 'r2', name: '가라르 코르시카', color: '#5269AC' },
+      { id: 'r3', name: '히스이 조로아크', color: '#FA7179' },
+      { id: 'r4', name: '팔데아 우파', color: '#A552CC' }
+    ];
+
     let excludedSet = new Set();
-    let currentCategory = 'gen'; // 'gen', 'type', 'custom'
+    let currentCategory = 'gen'; // 'gen', 'type', 'all', 'custom'
     let currentGameMode = 'roulette'; // 'roulette', 'cannon', 'slot', 'pokeball'
     let isSpinning = false;
     let historyLog = [];
 
-    // Audio Synth Context
+    // Audio Context
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
@@ -307,10 +348,10 @@
       } catch (e) {}
     }
 
-    // 현재 활성화된 데이터 목록 반환
     function getCurrentRawData() {
       if (currentCategory === 'gen') return GEN_DATA;
       if (currentCategory === 'type') return TYPE_DATA;
+      if (currentCategory === 'all') return ALL_POKEMON_DATA;
       return customData;
     }
 
@@ -318,7 +359,6 @@
       return getCurrentRawData().filter(item => !excludedSet.has(item.id));
     }
 
-    // 커스텀 입력 업데이트
     function updateCustomItems() {
       for (let i = 0; i < 4; i++) {
         const val = document.getElementById(`custom-${i}`).value.trim();
@@ -330,28 +370,32 @@
       }
     }
 
-    // 탭 변경
     function setCategory(cat) {
       if (isSpinning) return;
       currentCategory = cat;
-      
+
       const tabGen = document.getElementById('tab-gen');
       const tabType = document.getElementById('tab-type');
+      const tabAll = document.getElementById('tab-all');
       const tabCustom = document.getElementById('tab-custom');
       const customInputsCard = document.getElementById('customInputsCard');
 
-      [tabGen, tabType, tabCustom].forEach(btn => {
-        btn.className = "flex-1 py-2 rounded-xl transition-all text-slate-400 hover:text-white";
+      [tabGen, tabType, tabAll, tabCustom].forEach(btn => {
+        btn.className = "flex-1 py-2 px-3 rounded-xl transition-all text-slate-400 hover:text-white whitespace-nowrap";
       });
 
       if (cat === 'gen') {
-        tabGen.className = "flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg";
+        tabGen.className = "flex-1 py-2 px-3 rounded-xl transition-all text-white bg-indigo-600 shadow-lg whitespace-nowrap";
         customInputsCard.classList.add('hidden');
       } else if (cat === 'type') {
-        tabType.className = "flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg";
+        tabType.className = "flex-1 py-2 px-3 rounded-xl transition-all text-white bg-indigo-600 shadow-lg whitespace-nowrap";
         customInputsCard.classList.add('hidden');
+      } else if (cat === 'all') {
+        tabAll.className = "flex-1 py-2 px-3 rounded-xl transition-all text-white bg-indigo-600 shadow-lg whitespace-nowrap";
+        customInputsCard.classList.add('hidden');
+        setGameMode('slot'); // 전체 포켓몬은 슬롯머신으로 자동 고정
       } else {
-        tabCustom.className = "flex-1 py-2 rounded-xl transition-all text-white bg-indigo-600 shadow-lg";
+        tabCustom.className = "flex-1 py-2 px-3 rounded-xl transition-all text-white bg-indigo-600 shadow-lg whitespace-nowrap";
         customInputsCard.classList.remove('hidden');
       }
 
@@ -359,11 +403,10 @@
       drawCanvas();
     }
 
-    // 게임 모드 변경
     function setGameMode(mode) {
       if (isSpinning) return;
       currentGameMode = mode;
-      
+
       ['roulette', 'cannon', 'slot', 'pokeball'].forEach(m => {
         const btn = document.getElementById(`mode-${m}`);
         if (m === mode) {
@@ -383,7 +426,6 @@
       drawCanvas();
     }
 
-    // 칩 렌더링
     function renderChips() {
       const container = document.getElementById('chipContainer');
       container.innerHTML = '';
@@ -393,7 +435,7 @@
         const isExcluded = excludedSet.has(item.id);
         const chip = document.createElement('div');
         chip.className = `chip px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center space-x-1.5 ${isExcluded ? 'excluded bg-slate-900/40 border-slate-800 text-slate-500' : 'bg-slate-800/80 border-slate-700 text-slate-200'}`;
-        
+
         chip.innerHTML = `
           <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${item.color}"></span>
           <span>${item.name}</span>
@@ -426,11 +468,9 @@
       drawCanvas();
     }
 
-    // 캔버스 그리기 관련 변수 및 로직
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let rouletteAngle = 0;
-    let pokeballSelected = null;
 
     function drawCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -455,7 +495,6 @@
       }
     }
 
-    // 1. 룰렛 그리기
     function drawRouletteWheel(items) {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
@@ -478,7 +517,6 @@
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 텍스트
         ctx.save();
         ctx.rotate(angle + arc / 2);
         ctx.textAlign = 'right';
@@ -491,7 +529,6 @@
       }
       ctx.restore();
 
-      // 중앙 캡
       ctx.beginPath();
       ctx.arc(centerX, centerY, 22, 0, Math.PI * 2);
       ctx.fillStyle = '#0F172A';
@@ -500,7 +537,6 @@
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // 룰렛 화살표 (위쪽)
       ctx.beginPath();
       ctx.moveTo(centerX - 12, 18);
       ctx.lineTo(centerX + 12, 18);
@@ -513,95 +549,80 @@
       ctx.stroke();
     }
 
-    // 2. 대포 그리기
-    function drawCannonScene(launchProgress = 0, secretBallY = 0) {
+    function drawCannonScene(recoilY = 0, isFiring = false) {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
 
-      // 배경 대포 기둥
       ctx.fillStyle = '#334155';
       ctx.beginPath();
       ctx.arc(centerX, centerY + 80, 50, 0, Math.PI * 2);
       ctx.fill();
 
-      // 대포 몸통
       ctx.save();
-      ctx.translate(centerX, centerY + 70);
-      ctx.fillStyle = '#475569';
+      ctx.translate(centerX, centerY + 70 + recoilY);
+      ctx.fillStyle = isFiring ? '#F59E0B' : '#475569';
       ctx.fillRect(-25, -90, 50, 90);
       ctx.strokeStyle = '#94A3B8';
       ctx.lineWidth = 4;
       ctx.strokeRect(-25, -90, 50, 90);
-      ctx.restore();
 
-      // 시크릿 몬스터볼 발사 애니메이션
-      if (launchProgress > 0) {
-        ctx.save();
-        ctx.translate(centerX, centerY + 20 - secretBallY);
-        // 몬스터볼
+      if (isFiring) {
         ctx.beginPath();
-        ctx.arc(0, 0, 20, 0, Math.PI * 2);
+        ctx.arc(0, -95, 25, 0, Math.PI * 2);
         ctx.fillStyle = '#EF4444';
         ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, 0, 20, 0, Math.PI, false);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#0F172A';
-        ctx.stroke();
-        ctx.restore();
       }
+      ctx.restore();
     }
 
-    // 3. 슬롯머신 그리기
     function drawSlotMachineScene(items, slotText = '?') {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
 
-      // 슬롯 프레임
       ctx.fillStyle = '#1E293B';
-      ctx.fillRect(centerX - 120, centerY - 70, 240, 140);
+      ctx.fillRect(centerX - 130, centerY - 70, 260, 140);
       ctx.strokeStyle = '#F59E0B';
       ctx.lineWidth = 6;
-      ctx.strokeRect(centerX - 120, centerY - 70, 240, 140);
+      ctx.strokeRect(centerX - 130, centerY - 70, 260, 140);
 
-      // 슬롯 창
       ctx.fillStyle = '#0F172A';
-      ctx.fillRect(centerX - 100, centerY - 50, 200, 100);
+      ctx.fillRect(centerX - 115, centerY - 50, 230, 100);
 
-      // 텍스트 출력
       ctx.fillStyle = '#FCE7F3';
-      ctx.font = 'bold 28px Jua';
+      ctx.font = 'bold 22px Jua';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(slotText, centerX, centerY);
     }
 
-    // 4. 몬스터볼 Pick 그리기
-    function drawPokeballScene() {
+    function drawPokeballScene(shakeBallIndex = null, shakeAngle = 0) {
       const centerY = canvas.height / 2;
       const positions = [65, 170, 275];
 
       positions.forEach((x, idx) => {
         ctx.save();
         ctx.translate(x, centerY);
-        
-        // 몬스터볼 3개 그리기
+
+        if (shakeBallIndex === idx) {
+          ctx.rotate(shakeAngle);
+        }
+
         ctx.beginPath();
-        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.arc(0, 0, 32, 0, Math.PI * 2);
         ctx.fillStyle = '#EF4444';
         ctx.fill();
+
         ctx.beginPath();
-        ctx.arc(0, 0, 30, 0, Math.PI, false);
+        ctx.arc(0, 0, 32, 0, Math.PI, false);
         ctx.fillStyle = '#FFFFFF';
         ctx.fill();
+
         ctx.lineWidth = 4;
         ctx.strokeStyle = '#0F172A';
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.arc(0, 0, 9, 0, Math.PI * 2);
         ctx.fillStyle = '#FFFFFF';
         ctx.fill();
         ctx.stroke();
@@ -610,7 +631,6 @@
       });
     }
 
-    // 몬스터볼 클릭 이벤트 처리
     canvas.addEventListener('click', (e) => {
       if (currentGameMode !== 'pokeball' || isSpinning) return;
       const rect = canvas.getBoundingClientRect();
@@ -622,14 +642,12 @@
       positions.forEach((x, idx) => {
         const dist = Math.hypot(clickX - x, clickY - centerY);
         if (dist <= 35) {
-          pokeballSelected = idx;
-          startSpin();
+          startSpin(idx);
         }
       });
     });
 
-    // 메인 무작위 추첨 실행 함수
-    function startSpin() {
+    function startSpin(selectedPokeballIdx = 0) {
       const items = getActiveItems();
       if (items.length === 0 || isSpinning) return;
 
@@ -646,16 +664,15 @@
       } else if (currentGameMode === 'slot') {
         runSlotAnimation(items, winner);
       } else if (currentGameMode === 'pokeball') {
-        runPokeballAnimation(winner);
+        runPokeballAnimation(selectedPokeballIdx, winner);
       }
     }
 
-    // 룰렛 애니메이션
     function runRouletteAnimation(items, winnerIndex, winner) {
       const totalSlices = items.length;
       const sliceArc = (Math.PI * 2) / totalSlices;
       const targetAngle = (Math.PI * 2) * 5 + (totalSlices - winnerIndex - 0.5) * sliceArc - Math.PI / 2;
-      
+
       let start = null;
       const duration = 3500;
       let lastTick = 0;
@@ -665,9 +682,9 @@
         const elapsed = timestamp - start;
         const progress = Math.min(elapsed / duration, 1);
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        
+
         rouletteAngle = easeOut * targetAngle;
-        
+
         if (elapsed - lastTick > 100 - progress * 50) {
           playSound('tick');
           lastTick = elapsed;
@@ -684,18 +701,19 @@
       requestAnimationFrame(animate);
     }
 
-    // 대포 애니메이션
     function runCannonAnimation(winner) {
       let start = null;
-      const duration = 2000;
+      const duration = 1800;
 
       function animate(timestamp) {
         if (!start) start = timestamp;
         const elapsed = timestamp - start;
         const progress = Math.min(elapsed / duration, 1);
-        const ballY = progress * 160;
 
-        drawCannonScene(progress, ballY);
+        const recoilY = progress < 0.2 ? Math.sin(progress * 5 * Math.PI) * 15 : 0;
+        const isFiring = progress > 0.15 && progress < 0.35;
+
+        drawCannonScene(recoilY, isFiring);
 
         if (progress < 1) {
           requestAnimationFrame(animate);
@@ -707,10 +725,9 @@
       requestAnimationFrame(animate);
     }
 
-    // 슬롯머신 애니메이션
     function runSlotAnimation(items, winner) {
       let count = 0;
-      const maxCount = 25;
+      const maxCount = 28;
       const interval = setInterval(() => {
         const tempItem = items[Math.floor(Math.random() * items.length)];
         drawSlotMachineScene(items, tempItem.name);
@@ -721,39 +738,46 @@
           clearInterval(interval);
           finishSpin(winner);
         }
-      }, 80);
+      }, 70);
     }
 
-    // 몬스터볼 Pick 애니메이션
-    function runPokeballAnimation(winner) {
-      playSound('win');
-      setTimeout(() => {
-        finishSpin(winner);
-      }, 500);
+    function runPokeballAnimation(ballIdx, winner) {
+      let count = 0;
+      const maxShakes = 18;
+
+      const interval = setInterval(() => {
+        const angle = (count % 2 === 0 ? 0.35 : -0.35);
+        drawPokeballScene(ballIdx, angle);
+        playSound('tick');
+        count++;
+
+        if (count >= maxShakes) {
+          clearInterval(interval);
+          drawPokeballScene(null, 0);
+          finishSpin(winner);
+        }
+      }, 100);
     }
 
-    // 당첨 완료 처리
     function finishSpin(winner) {
       isSpinning = false;
       document.getElementById('spinBtn').disabled = false;
       playSound('win');
 
-      // 폭죽 효과
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 85,
+        spread: 75,
         origin: { y: 0.6 }
       });
 
-      // 히스토리 추가
       let catName = '1~9세대';
       if (currentCategory === 'type') catName = '18가지 타입';
+      if (currentCategory === 'all') catName = '전체 포켓몬';
       if (currentCategory === 'custom') catName = '커스텀 4칸';
 
       historyLog.unshift({ category: catName, result: winner.name, time: new Date().toLocaleTimeString() });
       updateHistoryUI();
 
-      // 자동 제외 체크 시 제외 처리
       const autoExclude = document.getElementById('autoExcludeToggle').checked;
       if (autoExclude) {
         if (getActiveItems().length > 1) {
@@ -762,7 +786,6 @@
         }
       }
 
-      // 모달 표시
       document.getElementById('modalCategory').innerText = `${catName} 챌린지 결과`;
       document.getElementById('modalResultText').innerText = winner.name;
       document.getElementById('resultModal').classList.remove('hidden');
@@ -794,7 +817,6 @@
       updateHistoryUI();
     }
 
-    // 초기화 실행
     renderChips();
     drawCanvas();
   </script>
