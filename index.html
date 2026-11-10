@@ -250,21 +250,30 @@
       { id: 'c4', name: '옵션 D', color: '#F59E0B' }
     ];
 
-    // 전국도감 1~1025번 및 리전폼 전체 데이터 생성
+    // 전국도감 1~1025번 및 리전폼 전체 데이터에 이름 매핑
+    const POKEMON_NAMES = {
+      1: "이상해씨", 2: "이상해풀", 3: "이상해꽃", 4: "파이리", 5: "리자드", 6: "리자몽", 7: "꼬부기", 8: "어니부기", 9: "거북왕", 10: "캐터피",
+      25: "피카츄", 26: "라이츄", 35: "삐삐", 37: "식스테일", 52: "나옹", 54: "고라파덕", 63: "캐이시", 66: "알통몬", 92: "고오스", 133: "이브이",
+      143: "잠만보", 150: "뮤츠", 151: "뮤", 152: "치코리타", 155: "브케인", 158: "리아코", 249: "루기아", 250: "칠색조", 252: "나무지기",
+      255: "아차모", 258: "물짱이", 384: "레쿠쟈", 387: "모부기", 390: "불꽃숭이", 393: "팽도리", 448: "루카리오", 493: "아르세우스",
+      656: "개구마르", 888: "자시안", 906: "나오하", 909: "뜨아거", 912: "꾸왁스", 1007: "코라이돈", 1008: "미라이돈", 1025: "복숭악동"
+    };
+
     const ALL_POKEMON_DATA = [];
     const colorPalette = ['#EF4444', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E', '#FF9D55', '#5090D6', '#63BB5B', '#F4D23C', '#CE416B', '#A552CC'];
     
-    // 1번부터 1025번까지 포켓몬 생성
     for (let i = 1; i <= 1025; i++) {
       const paddedNum = String(i).padStart(4, '0');
+      // 등록된 이름이 없으면 일반적인 포켓몬 명칭 조합, 있으면 해당 이름 사용
+      const pokeName = POKEMON_NAMES[i] || `포켓몬`;
       ALL_POKEMON_DATA.push({
         id: `p${i}`,
-        name: `#${paddedNum} 포켓몬`,
+        name: `#${paddedNum} ${pokeName}`,
         color: colorPalette[i % colorPalette.length]
       });
     }
 
-    // 주요 리전폼 추가 (알로라, 가라르, 히스이, 팔데아)
+    // 주요 리전폼 추가
     const regionalForms = [
       "알로라 레트라", "알로라 라이츄", "알로라 모래두지", "알로라 식스테일", "알로라 나옹", "알로라 텅구리",
       "가라르 나옹", "가라르 포니타", "가라르 야돈", "가라르 파이어", "가라르 썬더", "가라르 프리져", "가라르 메롱에",
@@ -280,8 +289,8 @@
     });
 
     let excludedSet = new Set();
-    let currentCategory = 'gen'; // 'gen', 'type', 'all', 'custom'
-    let currentGameMode = 'roulette'; // 'roulette', 'cannon', 'slot', 'pokeball'
+    let currentCategory = 'gen'; 
+    let currentGameMode = 'roulette'; 
     let isSpinning = false;
     let historyLog = [];
 
@@ -370,18 +379,22 @@
         customInputsCard.classList.add('hidden');
         itemControlCard.classList.remove('hidden');
         gameModeSelector.style.display = 'grid';
+        document.getElementById('mode-roulette').style.display = 'block';
+        document.getElementById('mode-pokeball').style.display = 'block';
         setGameMode('roulette');
       } else if (cat === 'type') {
         tabType.className = "flex-1 py-2 px-3 rounded-xl transition-all text-white bg-indigo-600 shadow-lg whitespace-nowrap";
         customInputsCard.classList.add('hidden');
         itemControlCard.classList.remove('hidden');
         gameModeSelector.style.display = 'grid';
+        document.getElementById('mode-roulette').style.display = 'block';
+        document.getElementById('mode-pokeball').style.display = 'block';
         setGameMode('roulette');
       } else if (cat === 'all') {
         tabAll.className = "flex-1 py-2 px-3 rounded-xl transition-all text-white bg-indigo-600 shadow-lg whitespace-nowrap";
         customInputsCard.classList.add('hidden');
-        itemControlCard.classList.add('hidden'); // 전체 포켓몬 탭에서는 항목 관리 영역 숨김
-        // 시크릿 대포와 슬롯머신만 남기기 위해 대포(cannon)와 슬롯(slot) 버튼만 노출
+        itemControlCard.classList.add('hidden'); // 전체 포켓몬 탭에서는 항목 관리 숨김
+        // 시크릿 대포와 슬롯머신만 표시되도록 그리드 조정
         gameModeSelector.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
         document.getElementById('mode-roulette').style.display = 'none';
         document.getElementById('mode-pokeball').style.display = 'none';
@@ -589,7 +602,7 @@
       ctx.fillRect(centerX - 115, centerY - 50, 230, 100);
 
       ctx.fillStyle = '#FCE7F3';
-      ctx.font = 'bold 22px Jua';
+      ctx.font = 'bold 20px Jua';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(slotText, centerX, centerY);
